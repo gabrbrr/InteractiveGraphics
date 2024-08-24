@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dimensional Shift Game</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="healthBar">
+        <div></div>
+    </div>
+    <div id="levelIndicator">Level: 1</div>
+    <div id="menu">
+        <button id="startButton">Start</button>
+        <button id="pauseButton">Pause</button>
+        <button id="quitButton">Quit</button>
+    </div>
+    <div id="levelIndicator"></div>
+    <div id="gameOverScreen" style="display: none;">
+        <div id="gameOverContent">
+            <h1>Game Over</h1>
+            <button id="restartButton">Restart</button>
+        </div>
+    </div>
+    
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
