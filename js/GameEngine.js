@@ -1,9 +1,21 @@
 import { Enemy } from './components/Enemy.js';
 import { Player } from './components/Player.js';
+import { Torus } from './components/Torus.js';
 export class GameEngine {
     constructor() {
         this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1500);
+        const frustumSize = 25;
+        const aspect = window.innerWidth / window.innerHeight;
+        this.orthoCamera = new THREE.OrthographicCamera(
+        frustumSize * aspect / -2, 
+        frustumSize * aspect / 2, 
+        frustumSize / 2, 
+        frustumSize / -2, 
+        -10,  // Near clipping plane
+        100    // Far clipping plane
+    );
+
+        this.perspectiveCamera =  new THREE.PerspectiveCamera(45, aspect , 0.1, 1500);
         this.renderer = new THREE.WebGLRenderer();
         this.entities = [];
         this.uiManager = null;
@@ -13,10 +25,16 @@ export class GameEngine {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(this.renderer.domElement);
 
+        this.in2DMode = false;
+        this.camera=this.perspectiveCamera;
+
         window.addEventListener('resize', this.onResize.bind(this));
 
         this.isRunning = false; // To track if the game is running
         this.enemySpawnInterval = null;
+
+        this.CameraPosition3D = new THREE.Vector3(0, 1.8, -4);
+        this.CameraPosition2D = new THREE.Vector3(0, 5, 0);
     }
 
     addEntity(entity) {
@@ -61,11 +79,37 @@ export class GameEngine {
             } else {
                 entity.update(); // Call update on other entities
             }
+            this.updateCamera();
         });
             this.renderer.render(this.scene, this.camera);
         };
 
         animate();
+    }
+    
+    updateCamera() {
+        const player=this.entities.find(entity => entity instanceof Player);
+        if (!player.spaceship) return;
+    
+    
+        // Apply the spaceship's quaternion (rotation) to the offset
+        var offsetPosition=null;
+        if(!this.in2DMode){
+            offsetPosition = this.CameraPosition3D.clone().applyQuaternion(player.spaceship.quaternion);
+        }
+        else{
+            
+            offsetPosition = this.CameraPosition2D.clone().applyQuaternion(player.spaceship.quaternion);
+
+        }
+        // Set the new camera position based on the spaceship's position plus the offset
+        const desiredCameraPosition = player.spaceship.position.clone().add(offsetPosition);
+    
+        // Smoothly interpolate the camera position
+        this.camera.position.lerp(desiredCameraPosition, 0.1);
+    
+        // Make the camera look at the spaceship
+        this.camera.lookAt(player.spaceship.position);
     }
 
     stop() {
@@ -97,9 +141,20 @@ export class GameEngine {
 
     levelUp() {
         const enemy = this.entities.find(entity => entity instanceof Enemy);
-        this.level++;
-        if (enemy) {
-            enemy.increaseDifficulty(); // Increase difficulty
+        if(!this.in2DMode){
+                this.level++;
+            if (enemy) {
+                enemy.increaseDifficulty(); 
+            }
+            
+        }
+        else {
+            this.in2DMode=false;
+            this.camera=this.perspectiveCamera;
+            this.health = this.maxHealth;
+            this.entities.forEach((entity, index) => {
+                entity.switch();
+            });
         }
         this.uiManager.update(); // Example of adding score on level-up
     }
@@ -107,15 +162,27 @@ export class GameEngine {
     setHealth(health) {
         this.health = health;
         const player=this.entities.find(entity => entity instanceof Player);
-        this.uiManager.update();
+        
         if(this.health<=0  && player){
-            player.CameraPosition = new THREE.Vector3(0, 10, -20);
-            this.scene.remove(player.spaceship);
-            this.createExplosion(player.spaceship.position,player, () => {
-                // After explosion finishes, call game over
-                this.uiManager.triggerGameOver();
-            });
+            if(this.in2DMode){
+                this.scene.remove(player.spaceship);
+                this.createExplosion(player.spaceship.position,player, () => {
+                    // After explosion finishes, call game over
+                    this.uiManager.triggerGameOver();
+                });
+            }
+            else{
+                this.health = this.maxHealth;
+                this.in2DMode=true;
+                this.camera=this.orthoCamera;
+                this.entities.forEach((entity, index) => {
+                    entity.switch();
+                });
+
+            }
+            
         }
+        this.uiManager.update();
         
     }
     createExplosion(position,element,onComplete) {

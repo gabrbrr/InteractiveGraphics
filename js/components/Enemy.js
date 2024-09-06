@@ -6,6 +6,8 @@ export class Enemy {
         this.enemy_bb=new THREE.Box3();
         this.enemyBullets = [];
         this.difficulty = 1;
+        this.maxEnemyperLevel=3;
+        this.numEnemy=0;
         this.enemyModel = null;
         
         
@@ -20,22 +22,28 @@ export class Enemy {
         }, undefined, (error) => {
             console.error('An error occurred while loading the spaceship model', error);
         });
-        this.bulletGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-        this.bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        this.bulletGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+        this.bulletMaterial = new THREE.MeshBasicMaterial({ color: 0x6A5ACD });
         //this.spawnInterval = setInterval(() => this.spawnEnemy(), 5000);
     }
     spawnEnemy() {
-        if (!this.enemyModel) {
-            console.warn('Enemy model is not loaded yet.');
+        if (!this.enemyModel || this.numEnemy>=this.maxEnemyperLevel*this.difficulty) {
             return;
         }
 
         // Clone the loaded model to create a new enemy
         const enemy = this.enemyModel.clone();
         const distances = [80, -30];
+        
+        if (this.gameEngine.in2DMode){
+            var y=0;
+        }
+        else{
+            var y=(Math.random() - 0.5) * 30;
+        }
         const enemyOffset = new THREE.Vector3(
             (Math.random() - 0.5) * 30,
-            (Math.random() - 0.5) * 30,
+            y,
             distances[Math.floor(Math.random() * distances.length)],
         );
         enemyOffset.applyQuaternion(this.player.spaceship.quaternion);
@@ -77,6 +85,7 @@ a
                     this.enemies.splice(index, 1);
                     this.gameEngine.createExplosion(enemy.position,enemy);
                     this.player.bullets.splice(bulletIndex, 1);
+                    this.numEnemy--;
                 }
             });
 
@@ -93,6 +102,7 @@ a
                     this.scene.remove(enemy);
                     this.enemies.splice(index, 1);
                     this.gameEngine.createExplosion(enemy.position,enemy);
+                    this.numEnemy--;
                 }
             }
         });
@@ -121,8 +131,31 @@ a
         });
     }
     increaseDifficulty() {
-        this.difficulty += 1; // Increase difficulty (you can adjust this logic)
+        this.difficulty += 0.5;
     }
+    switch() {
+        // Iterate through all the enemies in the array
+        this.enemies.forEach((enemy) => {
+            // Remove each enemy from the scene
+            this.scene.remove(enemy);
+        });
+    
+        // Clear the enemies array
+        this.enemies.length = 0;
+    
+        // Reset the number of enemies
+        this.numEnemy = 0;
+    
+        // Optional: Also remove any bullets that were fired by the enemies
+        this.enemyBullets.forEach((bullet) => {
+            this.scene.remove(bullet);
+        });
+    
+        // Clear the enemy bullets array
+        this.enemyBullets.length = 0;
+    }
+    
+    
     
 
 }

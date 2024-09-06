@@ -10,15 +10,15 @@ const gameEngine = new GameEngine();
 const uiManager = new UIManager(gameEngine, initializeGame);
 
 async function initializeGame() {
-    const player = new Player();
+    const player = new Player(gameEngine);
     const environment = new Environment();
     const asteroid = new Asteroid(player,gameEngine);
-    const torus = new Torus(player);
+    const torus = new Torus(player,gameEngine,gameEngine.levelUp);
     const enemy = new Enemy(player, gameEngine);
 
     try {
         await Promise.all([
-            player.init(gameEngine.scene, gameEngine.camera, gameEngine.renderer),
+            player.init(gameEngine.scene, gameEngine.renderer),
             environment.init(gameEngine.scene),
             asteroid.init(gameEngine.scene),
             torus.init(gameEngine.scene),

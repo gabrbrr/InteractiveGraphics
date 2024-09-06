@@ -1,24 +1,23 @@
 
 export class Player {
-    constructor() {
+    constructor(gameEngine) {
+        this.gameEngine=gameEngine;
         this.spaceship = null;
         this.spaceship_bb= new THREE.Box3();
         this.speed = 0.1;
         this.maxSpeed = 0.5;
         this.acceleration = 0.01;
         this.bullets = [];
-        this.bulletGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-        this.bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        this.bulletGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+        this.bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0FFF });
         this.controls = { yawLeft: false, yawRight: false, pitchUp: false, pitchDown: false, rollLeft: false, rollRight: false, accelerating: false };
-        this.CameraPosition = new THREE.Vector3(0, 1.8, -4);
+        
     
     }
 
-    init(scene, camera, renderer) {
+    init(scene, renderer) {
         this.scene = scene;
-        this.camera = camera;
         this.renderer = renderer;
-        this.camera.position.copy(this.CameraPosition);
         
         return this.loadSpaceshipModel().then(() => {
             this.setupControls();
@@ -102,60 +101,46 @@ export class Player {
         const quaternionYaw = new THREE.Quaternion();
         const quaternionPitch = new THREE.Quaternion();
         const quaternionRoll = new THREE.Quaternion();
-    
+
         // Apply yaw (rotate around the world's Y-axis)
         if (this.controls.yawLeft) quaternionYaw.setFromAxisAngle(yawAxis, rotationSpeed);
         if (this.controls.yawRight) quaternionYaw.setFromAxisAngle(yawAxis, -rotationSpeed);
         this.spaceship.quaternion.multiplyQuaternions(quaternionYaw, this.spaceship.quaternion);
         
+        if(!this.gameEngine.in2DMode){
+            // Apply pitch (rotate around the spaceship's local X-axis)
+            if (this.controls.pitchUp) quaternionPitch.setFromAxisAngle(pitchAxis.applyQuaternion(this.spaceship.quaternion), rotationSpeed);
+            if (this.controls.pitchDown) quaternionPitch.setFromAxisAngle(pitchAxis.applyQuaternion(this.spaceship.quaternion), -rotationSpeed);
+            this.spaceship.quaternion.multiplyQuaternions(quaternionPitch, this.spaceship.quaternion);
         
-        // Apply pitch (rotate around the spaceship's local X-axis)
-        if (this.controls.pitchUp) quaternionPitch.setFromAxisAngle(pitchAxis.applyQuaternion(this.spaceship.quaternion), rotationSpeed);
-        if (this.controls.pitchDown) quaternionPitch.setFromAxisAngle(pitchAxis.applyQuaternion(this.spaceship.quaternion), -rotationSpeed);
-        this.spaceship.quaternion.multiplyQuaternions(quaternionPitch, this.spaceship.quaternion);
-    
-        // Apply roll (rotate around the spaceship's local Z-axis)
-        if (this.controls.rollLeft) quaternionRoll.setFromAxisAngle(rollAxis.applyQuaternion(this.spaceship.quaternion), rotationSpeed);
-        if (this.controls.rollRight) quaternionRoll.setFromAxisAngle(rollAxis.applyQuaternion(this.spaceship.quaternion), -rotationSpeed);
-        this.spaceship.quaternion.multiplyQuaternions(quaternionRoll, this.spaceship.quaternion);
+            // Apply roll (rotate around the spaceship's local Z-axis)
+            if (this.controls.rollLeft) quaternionRoll.setFromAxisAngle(rollAxis.applyQuaternion(this.spaceship.quaternion), rotationSpeed);
+            if (this.controls.rollRight) quaternionRoll.setFromAxisAngle(rollAxis.applyQuaternion(this.spaceship.quaternion), -rotationSpeed);
+            this.spaceship.quaternion.multiplyQuaternions(quaternionRoll, this.spaceship.quaternion);
+        }
     
         // Move the spaceship forward in the direction it's facing
         const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(this.spaceship.quaternion);
         forward.multiplyScalar(this.speed);
         this.spaceship.position.add(forward);
-    
         this.updateBullets();
-        this.updateCamera();
+        
     }
     
 
     updateBullets() {
         this.bullets.forEach((bullet, index) => {
             bullet.position.add(bullet.userData.velocity);
-            // if (bullet.position.length() > 100) {
-            //     this.scene.remove(bullet);
-            //     this.bullets.splice(index, 1);
-            // }
         });
     }
+    switch() {
+        // Reset the spaceship's rotation to align with the XZ plane
+        this.spaceship.rotation.set(0, 0, 0); // Facing along the negative Z-axis
+        // Ensure the spaceship is at the correct Z position for 2D mode
+        this.spaceship.position.y = 0;
 
-    updateCamera() {
-        if (!this.spaceship || !this.camera) return;
-    
-        // Define an offset for the camera relative to the spaceship
-        //const cameraOffset = new THREE.Vector3(0, 2, 5); // Position camera slightly above and behind the spaceship
-    
-        // Apply the spaceship's quaternion (rotation) to the offset
-        const offsetPosition = this.CameraPosition.clone().applyQuaternion(this.spaceship.quaternion);
-    
-        // Set the new camera position based on the spaceship's position plus the offset
-        const desiredCameraPosition = this.spaceship.position.clone().add(offsetPosition);
-    
-        // Smoothly interpolate the camera position
-        this.camera.position.lerp(desiredCameraPosition, 0.1);
-    
-        // Make the camera look at the spaceship
-        this.camera.lookAt(this.spaceship.position);
+        this.controls = { yawLeft: false, yawRight: false, pitchUp: false, pitchDown: false, rollLeft: false, rollRight: false, accelerating: false };
     }
+    
     
 }

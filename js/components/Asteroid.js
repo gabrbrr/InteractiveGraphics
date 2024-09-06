@@ -5,7 +5,7 @@ export class Asteroid {
         this.player=player
         this.asteroids = [];
         this.asteroid_bb= new THREE.Sphere();
-        this.maxAsteroids = 100;
+        this.maxAsteroids = 70;
         this.asteroidDistanceThreshold = 350;
         this.maxrespawnDistance = 310;
         this.minrespawnDistance = 309.8;
@@ -76,6 +76,7 @@ export class Asteroid {
                 });
                         if (this.player.spaceship_bb.intersectsSphere(this.asteroid_bb) ) {
                             var health = this.gameEngine.health-this.gameEngine.maxHealth; 
+                            
                             this.gameEngine.setHealth(health);
                     }
             
@@ -92,16 +93,23 @@ export class Asteroid {
         const distance = Math.random() * (this.maxrespawnDistance - this.minrespawnDistance) + this.minrespawnDistance;
         
         // Random offsets for X and Y to spread the asteroids around the spaceship
-        const xOffset = (Math.random() - 0.5) * 200; // Adjust the multiplier to control the spread
-        const yOffset = (Math.random() - 0.5) * 200; // Adjust the multiplier to control the spread
+        const xOffset = (Math.random() - 0.5) * 300; // Adjust the multiplier to control the spread
+        const yOffset = (Math.random() - 0.5) * 100; // Adjust the multiplier to control the spread
         
         // Calculate the new position
         const newPosition = spaceshipPosition.clone().add(spaceshipDirection.clone().multiplyScalar(distance));
         newPosition.x += xOffset;
-        newPosition.y += yOffset;
+        if(!this.gameEngine.in2DMode){
+            newPosition.y += yOffset;
+        }
         
         // Set the new position for the asteroid
         asteroid.position.copy(newPosition);
+    }
+    switch(){
+        this.asteroids.forEach(asteroid => {
+            this.repositionAsteroid(asteroid,this.player.spaceship);
+        });
     }
     
 }
