@@ -11,14 +11,10 @@ export class Torus {
     init(scene) {
         this.scene = scene;
         this.torusGeometry = new THREE.TorusGeometry(2.5, 0.3, 2, 4);
-        this.torusMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
-        this.axisHelper = new THREE.AxesHelper(50);
     }
     spawnTorus() {
         
         this.torus = new THREE.Mesh(this.torusGeometry, this.torusMaterial);
-        const axisHelper = new THREE.AxesHelper(5); // Adjust the size as needed
-        this.torus.add(axisHelper);
         const spaceshipDirection = new THREE.Vector3(0, 0, 1).applyQuaternion(this.player.spaceship.quaternion);
         
         
@@ -61,12 +57,11 @@ export class Torus {
         }
     }
     switch(){
-        this.torus = null;
-        this.torusTraversed=0;
         if(this.torus){
             this.scene.remove(this.torus);
         }
-        
+        this.torus = null;
+        this.torusTraversed=0;
         this.spawnTorus();      
 
     }
